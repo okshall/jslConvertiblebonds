@@ -1,5 +1,4 @@
 import requests
-import csv
 from operator import itemgetter
 import pandas as pd
 
@@ -75,30 +74,48 @@ def get_jsl_etf():
     url_etf="https://www.jisilu.cn/data/etf/etf_list/?___jsl=LST___t=1608034730752&rp=25&page=1"
     return get_jsl_found(url_etf)
 
-df = get_jsl_kzz()
+def kzz_strategy():
+    df = get_jsl_kzz()
+    #剔除PB小于1
+    df = df[df['PB'].astype('float') > 1]
+    df = df[df['PB'].astype('float') < 5]
+    #剔除成交额小于100万
+    df = df[df['成交额'].astype('float') > 100]
+    #剔除价格大于115
+    df = df[df['现价'].astype('float') < 115]
+    #剔除溢价率大于20%
+    df = df[(df['溢价率'].str.strip("%").astype('float')/100) < 0.15]
+    #剔除剩余年限小于1
+    df = df[df['剩余年限'].astype('float') > 1]
+    #剔除剩余规模小于5千万
+    df = df[df['剩余规模'].astype('float') > 0.5]
+    #剔除未到转股期
+    df = df[df['转股状态'] != '未到转股期']
+    #剔除到期税前收益率小于0
+    df = df[(df['到期税后收益'].str.strip("%").astype('float')/100) > 0]
+    return df
 
-#剔除PB小于1
-df = df[df['PB'].astype('float') > 1]
-
-df = df[df['PB'].astype('float') < 5]
-
-#剔除成交额小于100万
-df = df[df['成交额'].astype('float') > 100]
-#剔除价格大于115
-df = df[df['现价'].astype('float') < 115]
-#剔除溢价率大于20%
-df = df[(df['溢价率'].str.strip("%").astype('float')/100) < 0.15]
-#剔除剩余年限小于1
-df = df[df['剩余年限'].astype('float') > 1]
-#剔除剩余规模小于5千万
-df = df[df['剩余规模'].astype('float') > 0.5]
-#剔除未到转股期
-df = df[df['转股状态'] != '未到转股期']
-#剔除到期税前收益率小于0
-df = df[(df['到期税后收益'].str.strip("%").astype('float')/100) > 0]
-print(df)
+def qdii_strategy():
+    df = get_jsl_qdii()
+    df = df[df['基金总值'].astype('float') > 2]
+    return df
+def lof_strategy():
+    df = get_jsl_lof()
+    df = df[df['基金总值'].astype('float') > 5]
+    return df  
+def etf_strategy():
+    df = get_jsl_etf()
+    df = df[df['基金总值'].astype('float') > 5]
+    return df    
+kzz = kzz_strategy()
+qdii = qdii_strategy()
+lof = lof_strategy()
+etf = etf_strategy()
 
 writer = pd.ExcelWriter("test.xls")
-df.to_excel(writer, 'all')
+kzz.to_excel(writer, 'kzz')
+qdii.to_excel(writer, 'qdii')
+lof.to_excel(writer, 'lof')
+etf.to_excel(writer, 'etf')
 writer.save()
 print('over')
