@@ -1,7 +1,8 @@
 import requests
 from operator import itemgetter
 import pandas as pd
-
+import xalpha as xa
+import operator
 
 def get_pd_data(url, keyPool_en, keyPool_zh):
     database=[]
@@ -47,10 +48,34 @@ def get_jsl_found(url):
     #构造英文pool便于获取所需的value
     keyPool_en=['fund_id','fund_nm','price','increase_rt','volume','amount','discount_rt','index_nm']
     #构造中文pool
-    keyPool_zh=['代码','基金名称','现价','涨跌幅','成交额','场内份额','溢价率','相关标的']
+    keyPool_zh=['代码','基金名称','现价','涨跌幅','成交额','场内份额','溢价率','参考指数']
     found = get_pd_data(url, keyPool_en, keyPool_zh)
     found['基金总值'] = found.apply(lambda x: float(x['现价']) * float(x['场内份额']) / 10000, axis=1)
-    return found
+    # 保留出总值最高的基金
+    try:
+        found = found.sort_values('基金总值', ascending=False).groupby('参考指数', as_index=False).first()
+    except:
+        print("sort_values error, will continue")
+    data = pd.DataFrame()
+    for row in found.iterrows():
+        if operator.eq(row[1]['代码'][0], '1') :
+            code = 'SZ' + row[1]['代码']
+        else :
+            code = 'SH' + row[1]['代码']
+     
+        tmpdf = xa.get_daily(code, start="20160101")
+        max = float(tmpdf['close'].max())
+        min = float(tmpdf['close'].min())
+        cur = float(tmpdf[-1:]['close'])
+   
+        row[1]['百分位置'] = format((cur - min )/(max - min), '.3f')
+        row[1]['低点涨幅'] = format((cur - min) / min, '3f')
+       
+        data = data.append(row[1])
+        data =data[data['百分位置'].astype('float') < 1]
+        data =data[data['低点涨幅'].astype('float') < 1]
+        data = data.sort_values(by='百分位置')
+    return data
 
 def get_jsl_qdii():
     urla="https://www.jisilu.cn/data/qdii/qdii_list/A?___jsl=LST___t=1608033090935&rp=22"
@@ -97,15 +122,15 @@ def kzz_strategy():
 
 def qdii_strategy():
     df = get_jsl_qdii()
-    df = df[df['基金总值'].astype('float') > 2]
+    df = df[df['基金总值'].astype('float') > 1]
     return df
 def lof_strategy():
     df = get_jsl_lof()
-    df = df[df['基金总值'].astype('float') > 5]
+    df = df[df['基金总值'].astype('float') > 1]
     return df  
 def etf_strategy():
     df = get_jsl_etf()
-    df = df[df['基金总值'].astype('float') > 5]
+    df = df[df['基金总值'].astype('float') > 1]
     return df    
 kzz = kzz_strategy()
 qdii = qdii_strategy()
