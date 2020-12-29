@@ -63,18 +63,18 @@ def get_jsl_found(url):
         else :
             code = 'SH' + row[1]['代码']
      
-        tmpdf = xa.get_daily(code, start="20160101")
+        tmpdf = xa.get_daily(code, start="20170101")
         max = float(tmpdf['close'].max())
         min = float(tmpdf['close'].min())
         cur = float(tmpdf[-1:]['close'])
    
         row[1]['百分位置'] = format((cur - min )/(max - min), '.3f')
-        row[1]['低点涨幅'] = format((cur - min) / min, '3f')
+        row[1]['低点涨幅'] = format((cur - min) / min, '.3f')
        
         data = data.append(row[1])
-        data =data[data['百分位置'].astype('float') < 1]
-        data =data[data['低点涨幅'].astype('float') < 1]
-        data = data.sort_values(by='百分位置')
+    data =data[data['百分位置'].astype('float') < 1]
+    data =data[data['低点涨幅'].astype('float') < 1]
+    data = data.sort_values(by='百分位置',ascending=True)
     return data
 
 def get_jsl_qdii():
@@ -85,6 +85,7 @@ def get_jsl_qdii():
     qdii_c = get_jsl_found(urlc)
     qdii_e = get_jsl_found(urle)
     qdii = qdii_a.append([qdii_c, qdii_e])
+    qdii = qdii.sort_values(by='百分位置',ascending=True)
     return qdii
 
 def get_jsl_lof():
