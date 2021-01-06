@@ -72,7 +72,7 @@ def get_jsl_found(url):
         row[1]['低点涨幅'] = format((cur - min) / min, '.3f')
        
         data = data.append(row[1])
-    data =data[data['百分位置'].astype('float') < 1]
+    data =data[data['百分位置'].astype('float') < 0.5]
     data =data[data['低点涨幅'].astype('float') < 1]
     data = data.sort_values(by='百分位置',ascending=True)
     return data
@@ -103,7 +103,7 @@ def get_jsl_etf():
 def kzz_strategy():
     df = get_jsl_kzz()
     #剔除PB小于1
-    df = df[df['PB'].astype('float') > 1]
+    df = df[df['PB'].astype('float') > 1.3]
     df = df[df['PB'].astype('float') < 5]
     #剔除成交额小于100万
     df = df[df['成交额'].astype('float') > 100]
@@ -115,6 +115,10 @@ def kzz_strategy():
     df = df[df['剩余年限'].astype('float') > 1]
     #剔除剩余规模小于5千万
     df = df[df['剩余规模'].astype('float') > 0.5]
+        #剔除剩余规模大于8亿
+    df = df[df['剩余规模'].astype('float') < 8]
+    #正股价大于10元
+    df = df[df['正股价'].astype('float') > 10]
     #剔除未到转股期
     df = df[df['转股状态'] != '未到转股期']
     #剔除到期税前收益率小于0
@@ -131,7 +135,7 @@ def lof_strategy():
     return df  
 def etf_strategy():
     df = get_jsl_etf()
-    df = df[df['基金总值'].astype('float') > 1]
+    df = df[df['基金总值'].astype('float') > 10]
     return df    
 kzz = kzz_strategy()
 qdii = qdii_strategy()
