@@ -3,6 +3,7 @@ from operator import itemgetter
 import pandas as pd
 import xalpha as xa
 import operator
+from datetime import datetime
 
 def get_pd_data(url, keyPool_en, keyPool_zh):
     database=[]
@@ -67,10 +68,12 @@ def get_jsl_found(url):
         max = float(tmpdf['close'].max())
         min = float(tmpdf['close'].min())
         cur = float(tmpdf[-1:]['close'])
-   
-        row[1]['百分位置'] = format((cur - min )/(max - min), '.3f')
-        row[1]['低点涨幅'] = format((cur - min) / min, '.3f')
-       
+        try:
+            row[1]['百分位置'] = format((cur - min )/(max - min), '.3f')
+            row[1]['低点涨幅'] = format((cur - min) / min, '.3f')
+        except:
+            row[1]['百分位置'] = '0'
+            row[1]['低点涨幅'] = '0'
         data = data.append(row[1])
     data =data[data['百分位置'].astype('float') < 0.5]
     data =data[data['低点涨幅'].astype('float') < 1]
@@ -141,8 +144,9 @@ kzz = kzz_strategy()
 qdii = qdii_strategy()
 lof = lof_strategy()
 etf = etf_strategy()
-
-writer = pd.ExcelWriter("test.xls")
+time = datetime.strftime(datetime.now(),'%Y-%m-%d')
+filename = time + '.xls'
+writer = pd.ExcelWriter(filename)
 kzz.to_excel(writer, 'kzz')
 qdii.to_excel(writer, 'qdii')
 lof.to_excel(writer, 'lof')
