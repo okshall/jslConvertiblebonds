@@ -64,7 +64,7 @@ def get_jsl_found(url):
         else :
             code = 'SH' + row[1]['代码']
      
-        tmpdf = xa.get_daily(code, start="20170101")
+        tmpdf = xa.get_daily(code, start="20190101")
         max = float(tmpdf['close'].max())
         min = float(tmpdf['close'].min())
         cur = float(tmpdf[-1:]['close'])
@@ -76,8 +76,8 @@ def get_jsl_found(url):
             row[1]['低点涨幅'] = '0'
         data = data.append(row[1])
     data =data[data['百分位置'].astype('float') < 0.5]
-    data =data[data['低点涨幅'].astype('float') < 1]
-    data = data.sort_values(by='百分位置',ascending=True)
+    data =data[data['低点涨幅'].astype('float') < 0.1]
+    data = data.sort_values(by='低点涨幅',ascending=True)
     return data
 
 def get_jsl_qdii():
@@ -105,6 +105,7 @@ def get_jsl_etf():
 
 def kzz_strategy():
     df = get_jsl_kzz()
+    '''
     #剔除PB小于1
     df = df[df['PB'].astype('float') > 1.3]
     df = df[df['PB'].astype('float') < 5]
@@ -113,19 +114,43 @@ def kzz_strategy():
     #剔除价格大于115
     df = df[df['现价'].astype('float') < 115]
     #剔除溢价率大于20%
-    df = df[(df['溢价率'].str.strip("%").astype('float')/100) < 0.15]
+    df = df[(df['溢价率'].str.strip("%").astype('float')/100) < 0.2]
     #剔除剩余年限小于1
     df = df[df['剩余年限'].astype('float') > 1]
     #剔除剩余规模小于5千万
     df = df[df['剩余规模'].astype('float') > 0.5]
         #剔除剩余规模大于8亿
-    df = df[df['剩余规模'].astype('float') < 8]
+   # df = df[df['剩余规模'].astype('float') < 8]
+    #正股价大于10元
+    df = df[df['正股价'].astype('float') > 10]
+    #剔除未到转股期
+    #df = df[df['转股状态'] != '未到转股期']
+    #剔除到期税前收益率小于0
+    df = df[(df['到期税后收益'].str.strip("%").astype('float')/100) > 0]
+    '''
+
+    #剔除PB小于1
+    df = df[df['PB'].astype('float') > 1.3]
+    df = df[df['PB'].astype('float') < 5]
+    #剔除成交额小于100万
+    df = df[df['成交额'].astype('float') > 100]
+    #剔除价格大于115
+    df = df[df['现价'].astype('float') < 110]
+    #剔除溢价率大于20%
+    df = df[(df['溢价率'].str.strip("%").astype('float')/100) < 0.5]
+    #剔除剩余年限小于1
+    df = df[df['剩余年限'].astype('float') > 1]
+    #剔除剩余规模小于5千万
+    df = df[df['剩余规模'].astype('float') > 0.5]
+        #剔除剩余规模大于8亿
+    df = df[df['剩余规模'].astype('float') < 10]
     #正股价大于10元
     df = df[df['正股价'].astype('float') > 10]
     #剔除未到转股期
     df = df[df['转股状态'] != '未到转股期']
     #剔除到期税前收益率小于0
-    df = df[(df['到期税后收益'].str.strip("%").astype('float')/100) > 0]
+    df = df[(df['到期税后收益'].str.strip("%").astype('float')/100) > 0.02]
+
     return df
 
 def qdii_strategy():
@@ -138,7 +163,7 @@ def lof_strategy():
     return df  
 def etf_strategy():
     df = get_jsl_etf()
-    df = df[df['基金总值'].astype('float') > 10]
+    df = df[df['基金总值'].astype('float') > 3]
     return df    
 kzz = kzz_strategy()
 qdii = qdii_strategy()
